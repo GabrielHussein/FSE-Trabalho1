@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <pthread.h>
 
-room *roomCounter;
+roomCounter *roomCounterSingle;
 
 int reportSize = 0;
 int totalCount = 0;
@@ -38,13 +38,13 @@ int main () {
 }
 
 void updateCounterLength() {
-    roomCounter = (roomCounter *) malloc((reportSize + 1) * sizeof(roomCounter));
+    roomCounterSingle = (roomCounterSingle *) malloc((reportSize + 1) * sizeof(roomCounterSingle));
     reportSize++;
 }
 
 void updateCounter (int peopleRoom, int peopleTotal) {
     updateCounterLength();
-    roomCounter[reportSize - 1].peopleSingle = peopleRoom;
+    roomCounterSingle[reportSize - 1].peopleSingle = peopleRoom;
     totalCount = totalCount + peopleTotal;
 }
 
@@ -123,7 +123,7 @@ void createCentralServer(){
                     printf("Total de salas monitoradas: %d\n", reportSize);
                     printf("Total de pessoas presentes nas salas: %d\n", totalCount);
                     for(int i = 0; i < reportSize; i++){
-                        printf("Numero de pessoas na sala %d: %d\n", i, roomCounter[i].peopleSingle);
+                        printf("Numero de pessoas na sala %d: %d\n", i, roomCounterSingle[i].peopleSingle);
                     }
                     bzero(buff, MAX);
             }  

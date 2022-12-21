@@ -121,11 +121,11 @@ void sendMessageSignal(int commandNumber) {
 
     int sockfd = setupSocket();
     
-    client.sin_family = AF_INET;
-    client.sin_addr.s_addr = inet_addr(DISTRIBUTED_IP);
-    client.sin_port = htons(PORT);
+    clientAddress.sin_family = AF_INET;
+    clientAddress.sin_addr.s_addr = inet_addr(DISTRIBUTED_IP);
+    clientAddress.sin_port = htons(PORT);
 
-    connectSocketServer(sockfd, (struct sockaddr*) &clientAddress);
+    connectSocketServer(sockfd, &clientAddress);
 
     char sendBuffer[10];
     snprintf(sendBuffer, 10, "%d", commandNumber);
@@ -158,7 +158,7 @@ void writeLog(int commandNumber, int responseMessage){
 
     FILE *fp = fopen("reportLog.csv", "a");
 
-    fprintf(fp, "%s,%s,%s", checkCommandNumber(commandNumber), asctime(timeinfo), (responseMessage == 1 ? "Sucesso", "Falha"));
+    fprintf(fp, "%s,%s,%s", checkCommandNumber(commandNumber), asctime(timeinfo), (responseMessage == 1 ? "Sucesso" : "Falha"));
 
     fclose(fp);
 }
