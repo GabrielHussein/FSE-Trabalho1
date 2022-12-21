@@ -125,7 +125,7 @@ void sendMessageSignal(int commandNumber) {
     clientAddress.sin_addr.s_addr = inet_addr(DISTRIBUTED_IP);
     clientAddress.sin_port = htons(PORT);
 
-    connectSocketServer(sockfd, &clientAddress);
+    connectSocketServer(sockfd, clientAddress);
 
     char sendBuffer[10];
     snprintf(sendBuffer, 10, "%d", commandNumber);
