@@ -29,7 +29,7 @@ int main () {
     fclose(fp);
 
     pthread_create(&listener, NULL, funcMenu, NULL);
-    pthread_create(&central, NULL, createCentralServer, NULL);
+ //   pthread_create(&central, NULL, createCentralServer, NULL);
 
     pthread_join(listener, NULL);
     pthread_join(central, NULL);
@@ -55,8 +55,8 @@ void createCentralServer(){
     int max_sd, sd, new_socket, valread, addrlen, activity, max_conn = 4;
     struct sockaddr_in address, cli;
     fd_set readfds;
-    char buff[MAX];
-
+    char buff[1];
+	
     for (i = 0; i < max_conn; i++) {  
         connfd[i] = 0;  
     } 
@@ -72,10 +72,10 @@ void createCentralServer(){
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_port = htons(PORT);
-
+    printf("IP %s\n", inet_ntoa(address.sin_addr));
+    printf("port %d\n", (int) ntohs(address.sin_port));
     bindSocket(sockfd, address);
     listenSocketServer(sockfd);
-
     addrlen = sizeof(address);
 
     while(1) {
@@ -116,8 +116,8 @@ void createCentralServer(){
             sd = connfd[i];  
             if (FD_ISSET(sd , &readfds)) {  
                     int peopleRoom = buff[0];
-                    int peopleTotal = buff[1];
-
+		    int peopleTotal = peopleRoom;
+		    printf("valor buff %c e %d valor people %d", buff[0], (int)buff[0]-48, peopleRoom);
                     updateCounter(peopleRoom, peopleTotal);
 
                     printf("Total de salas monitoradas: %d\n", reportSize);
@@ -125,6 +125,7 @@ void createCentralServer(){
                     for(int i = 0; i < reportSize; i++){
                         printf("Numero de pessoas na sala %d: %d\n", i, roomCounterSingle[i].peopleSingle);
                     }
+		    sleep(10);
                     bzero(buff, MAX);
             }  
         } 

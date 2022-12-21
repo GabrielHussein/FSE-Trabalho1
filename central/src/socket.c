@@ -30,7 +30,7 @@ void listenSocketServer (int sockfd) {
         printf("Listen failed...\n");
         exit(0);
     } else {
-        printf("Server listening...\n");
+        printf("Listening to server...\n");
     }
 }
 

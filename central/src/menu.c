@@ -54,7 +54,7 @@ void activateMenuOptions() {
 
     __fpurge(stdin);
     char userInputChar = getchar();
-    int userInput = (int)userInputChar;
+    int userInput = (int)userInputChar - 48;
     system("clear");
     printf("userinput : %d\n",userInput);
 
@@ -125,10 +125,11 @@ void sendMessageSignal(int commandNumber) {
     int sockfd = setupSocket();
     
     clientAddress.sin_family = AF_INET;
-    clientAddress.sin_addr.s_addr = inet_addr(DISTRIBUTED_IP);
+    clientAddress.sin_addr.s_addr = inet_addr("0.0.0.0");
     clientAddress.sin_port = htons(PORT);
 
     connectSocketServer(sockfd, clientAddress);
+
 
     char sendBuffer[10];
     snprintf(sendBuffer, 10, "%d", commandNumber);

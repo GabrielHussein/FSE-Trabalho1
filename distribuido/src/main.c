@@ -21,8 +21,8 @@ int DHT22;
 
 room roomCounter;
 
-pthread_t threadA;
-pthread_t threadB;
+pthread_t reportSender;
+pthread_t listener;
 
 long lastMovement = 0;
 long millisHallway = 0;
@@ -38,7 +38,8 @@ bool alarmSystem = false;
 bool hallwayLights = false;
 
 void func(int sockfd);
-void *thread_func (void *arg);
+void *threadSender (void *arg);
+void *threadListener (void *arg);
 void alertSensorInit(int pin);
 void updateCounter(int movementSignal);
 void doorSensor (void);
@@ -55,8 +56,6 @@ void sendMessage (char *message);
 void hallwayCheck (void);
 
 int main (int argc, char * argv[]) {
-    //pthread_create(&threadA, NULL, thread_func, NULL);
-    printf("%d\n", &argv[2]);
     if(wiringPiSetup() == -1) {
         printf("Falha ao realizar set up da wiringpi.\n");
         return;
@@ -65,19 +64,19 @@ int main (int argc, char * argv[]) {
     checkFile(argv[1]);
     setupPins();
 
+    //pthread_create(&reportSender, NULL, threadSender, NULL);
     while(1){
         hallwayCheck();
         delay(3000);
     }
-
+    //pthread_join(reportSender, NULL);
     return 0;
 }
 
 void hallwayCheck (void){
-    printf("Checando corredor\n");
     long millisCheck = millis();
     if (hallwayLights == true){
-	    printf("Tempo com luzes ligadas: %ld\n", millisCheck);
+	    printf("Tempo com luzes ligadas em milisegundos: %ld\n", millisCheck - millisHallway);
     }
     if ((millisCheck - millisHallway >= 15000) && hallwayLights == true){
         changeState(L_01);
@@ -89,10 +88,8 @@ void hallwayCheck (void){
 }
 
 void sendMessage(char *message){
-
     write(sockfd, message, sizeof(message));
     bzero(message, sizeof(message));
-    
 }
 
 void func(int sockfd) {
@@ -102,27 +99,37 @@ void func(int sockfd) {
     while(1) {
         bzero(reportBuffer, sizeof(reportBuffer));
         reportBuffer[0] = roomCounter.peopleSingle;
-        reportBuffer[1] = roomCounter.peopleTotal;
         write(sockfd, reportBuffer, sizeof(reportBuffer));
         bzero(reportBuffer, sizeof(reportBuffer));
         delay(2000);        
     }
 }
 
-void *thread_func (void *arg) {
+void *threadSender (void *arg) {
     struct sockaddr_in serverAddress, cli;
    
     sockfd = setupSocket();
     bzero(&serverAddress, sizeof(serverAddress));
    
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_addr.s_addr = inet_addr(CENTRAL_IP);
+    serverAddress.sin_addr.s_addr = inet_addr("0.0.0.0");
     serverAddress.sin_port = htons(PORT);
    
     connectSocketServer(sockfd, serverAddress);
-   
+    pthread_create(&listener, NULL, threadListener, (void*)sockfd);
     func(sockfd);   
     close(sockfd);
+}
+
+void *threadListener (void *arg){
+    char receiveBuffer[10];
+    int receiveSocket  = (int) arg;
+
+    printf("Ouvindo do central\n");
+    while(1){
+        read(receiveSocket, receiveBuffer, 10);
+	printf("Mensagem recebida: %d\n", receiveBuffer);
+    }
 }
 
 void updateCounter(int movementSignal){
@@ -186,15 +193,15 @@ void alertSensorInit(int pin){
         alarmSystem = true;
         printf("Sensor de fumaca acionado, iniciando alarme de incendio\n");
         changeState(AL_BZ);
-        //sendMessage(message);
+    //    sendMessage(message);
     }else if(pin==SJan){
          message = "Sensor de janela acionado";
          printf("Sensor de janela acionado\n");
-         //sendMessage(message);
+    //     sendMessage(message);
     }else if(pin==SPor){
          message = "Sensor de porta acionado";
          printf("Sensor de porta acionado\n");
-         //sendMessage(message);
+    //     sendMessage(message);
     }else if(pin==SPres){
          message = "Sensor de presenca acionado";
          printf("Sensor de presenca acionado\n");
@@ -210,7 +217,7 @@ void alertSensorInit(int pin){
             message = "Sensor de presenca acionado, lampadas da sala acionadas";
             printf("Lampadas da sala acionadas\n");
          }
-         //sendMessage(message);
+    //     sendMessage(message);
     }
 }
 
@@ -224,9 +231,6 @@ void sendReport(void){
 
     reportSize = strlen(reportMessage);
 
-    //if (send(sockfd, reportMessage, reportSize, 0) != reportSize)    {
-    //    printf("Erro no envio.\n");
-    //}
 }
 
 void checkFile(char *fileName){
