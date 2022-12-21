@@ -10,7 +10,7 @@ Matrícula: 17/0103200
 Para instalar é necessário abrir dois terminais separados, um para o servidor central e ao menos um para um distribuído:
 
 ```bash
-cd Distributed
+cd distribuido
 make
 ```
 
