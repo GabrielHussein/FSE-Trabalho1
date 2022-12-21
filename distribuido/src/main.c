@@ -50,18 +50,18 @@ void outSensor (void);
 void changeState (int pin);
 void sendReport (void);
 void setupPins (void);
-void checkFile (void);
+void checkFile (char *fileName);
 void sendMessage (char *message);
 void hallwayCheck (void);
 
 int main (int argc, char * argv[]) {
-    pthread_create(&threadA, NULL, thread_func, NULL);
+    //pthread_create(&threadA, NULL, thread_func, NULL);
     if(wiringPiSetup() == -1) {
         printf("Falha ao realizar set up da wiringpi.\n");
         return;
     }
     
-    checkFile();
+    checkFile(argv[1]);
     setupPins();
 
     while(1){
@@ -73,6 +73,7 @@ int main (int argc, char * argv[]) {
 }
 
 void hallwayCheck (void){
+    printf("Checando corredor\n");
     long millisCheck = millis();
     if ((millisCheck - millisHallway >= 1500) && hallwayLights == true){
         changeState(L_01);
@@ -171,22 +172,18 @@ void outSensor(void) {
 }
 
 void alertSensorInit(int pin){
-    switch(pin) {
-      case SFum :
-         message = "Sensor de fumaca acionado, iniciando alarme de incendio";
-         alarmSystem = true;
-         changeState(AL_BZ);
-         sendMessage(message);
-         break;
-      case SJan :
+    if(pin==SFum){
+        message = "Sensor de fumaca acionado, iniciando alarme de incendio";
+        alarmSystem = true;
+        changeState(AL_BZ);
+        //sendMessage(message);
+    }else if(pin==SJan){
          message = "Sensor de janela acionado";
-         sendMessage(message);
-         break;
-      case SPor :
+         //sendMessage(message);
+    }else if(pin==SPor){
          message = "Sensor de porta acionado";
-         sendMessage(message);
-         break;
-      case SPres :
+         //sendMessage(message);
+    }else if(pin==SPres){
          message = "Sensor de presenca acionado";
          if(alarmSystem == true && digitalRead(AL_BZ)==0){
             message = "Sensor de presenca acionado, alarme acionado";
@@ -198,12 +195,8 @@ void alertSensorInit(int pin){
             hallwayLights = true;
             message = "Sensor de presenca acionado, lampadas da sala acionadas";
          }
-         sendMessage(message);
-         break;
-      default :
-         message = "Nao houveram sensores acionados";
-         sendMessage(message);
-   }
+         //sendMessage(message);
+    }
 }
 
 void sendReport(void){
@@ -214,15 +207,15 @@ void sendReport(void){
 
     reportSize = strlen(reportMessage);
 
-    if (send(clienteSocket, reportMessage, reportSize, 0) != reportSize)    {
+    if (send(sockfd, reportMessage, reportSize, 0) != reportSize)    {
         printf("Erro no envio.\n");
     }
 }
 
-void checkFile(void){
+void checkFile(char *fileName){
     FILE* roomFile;
 
-    roomFile = fopen(argv[1], "r");
+    roomFile = fopen(fileName, "r");
     
     if(!roomFile) {
         printf("Arquivo de configuração de sala não existente ou incorreto\n");
@@ -240,7 +233,7 @@ void checkFile(void){
         fscanf(roomFile, "%d", &SC_OUT);
         fscanf(roomFile, "%d", &DHT22);
     }
-
+    printf("Leitura do arquivo de configuração feita com sucesso\n");
     fclose(roomFile);
 }
 
@@ -274,4 +267,6 @@ void setupPins(void){
     wiringPiISR(SPres, INT_EDGE_RISING, &presenceSensor);
     wiringPiISR(SC_IN, INT_EDGE_RISING, &inSensor);
     wiringPiISR(SC_OUT, INT_EDGE_RISING, &outSensor);
+
+    printf("Configuracao de pinos feita com sucesso\n");
 }
