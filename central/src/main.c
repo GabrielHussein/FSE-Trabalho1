@@ -38,7 +38,7 @@ int main () {
 }
 
 void updateCounterLength() {
-    roomCounterSingle = (roomCounterSingle *) malloc((reportSize + 1) * sizeof(roomCounterSingle));
+    roomCounterSingle = (roomCounter *) malloc((reportSize + 1) * sizeof(roomCounter));
     reportSize++;
 }
 

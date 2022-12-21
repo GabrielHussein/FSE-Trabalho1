@@ -14,8 +14,8 @@ void* funcMenu() {
     signal(SIGTSTP, handleSignal);
 
     while(1) {
-        mostraMenu();
-        sleep(5);
+        mainMenu();
+        sleep(20);
         __fpurge(stdin);
     }
 }
@@ -24,7 +24,7 @@ void* funcMenu() {
 void handleSignal(int sig) {
     if(sig==20){
         activateMenuOptions();
-    } else if(sig==3){
+    } else {
         exit(0);
     }
 }
@@ -53,8 +53,10 @@ void activateMenuOptions() {
     printf(" ||   PARA LIGAR TODOS OS COMPONENTES DE SAIDA DIGITE 7                 ||\n");
 
     __fpurge(stdin);
-    char userInput = getchar();
+    char userInputChar = getchar();
+    int userInput = (int)userInputChar;
     system("clear");
+    printf("userinput : %d\n",userInput);
 
     switch(userInput){
         case 1: 
@@ -116,6 +118,7 @@ void changeAll(int onOff){
 }
 
 void sendMessageSignal(int commandNumber) {
+    printf("entrei na mensagem\n");
   
     struct sockaddr_in clientAddress;
 
@@ -130,6 +133,7 @@ void sendMessageSignal(int commandNumber) {
     char sendBuffer[10];
     snprintf(sendBuffer, 10, "%d", commandNumber);
     int size = strlen(sendBuffer);
+    printf("enviando mensagem\n");
     if (send(sockfd, sendBuffer, size, 0) != size) {
         exit(0);
     }
