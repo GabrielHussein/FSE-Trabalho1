@@ -56,6 +56,7 @@ void hallwayCheck (void);
 
 int main (int argc, char * argv[]) {
     //pthread_create(&threadA, NULL, thread_func, NULL);
+    printf("%d\n", &argv[2]);
     if(wiringPiSetup() == -1) {
         printf("Falha ao realizar set up da wiringpi.\n");
         return;
@@ -66,7 +67,7 @@ int main (int argc, char * argv[]) {
 
     while(1){
         hallwayCheck();
-        delay(500);
+        delay(3000);
     }
 
     return 0;
@@ -75,12 +76,16 @@ int main (int argc, char * argv[]) {
 void hallwayCheck (void){
     printf("Checando corredor\n");
     long millisCheck = millis();
-    if ((millisCheck - millisHallway >= 1500) && hallwayLights == true){
+    if (hallwayLights == true){
+	    printf("Tempo com luzes ligadas: %ld\n", millisCheck);
+    }
+    if ((millisCheck - millisHallway >= 15000) && hallwayLights == true){
         changeState(L_01);
         changeState(L_02);
         hallwayLights = false;
+	printf("Desligando luzes apos o termino dos 15 segundos\n");
+	millisHallway = millisCheck;
     }
-    millisHallway = millisCheck;
 }
 
 void sendMessage(char *message){
@@ -96,8 +101,8 @@ void func(int sockfd) {
 
     while(1) {
         bzero(reportBuffer, sizeof(reportBuffer));
-        buff[0] = roomCounter[n].peopleSingle;
-        buff[1] = roomCounter[n].peopleTotal;
+        reportBuffer[0] = roomCounter.peopleSingle;
+        reportBuffer[1] = roomCounter.peopleTotal;
         write(sockfd, reportBuffer, sizeof(reportBuffer));
         bzero(reportBuffer, sizeof(reportBuffer));
         delay(2000);        
@@ -124,9 +129,13 @@ void updateCounter(int movementSignal){
     if(movementSignal == SC_IN){
         roomCounter.peopleSingle++;
         roomCounter.peopleTotal++;
+	printf("Entrou uma pessoa\n");
+	sendReport();
     } else if(movementSignal == SC_OUT){
         roomCounter.peopleSingle--;
         roomCounter.peopleTotal--;
+	printf("Saiu uma pessoa\n");
+	sendReport();
     }
 }
 
@@ -157,7 +166,7 @@ void presenceSensor(void) {
 
 void inSensor(void) {
     long millisIn = millis();
-    if(millisIn - lastMovement > 200){
+    if(millisIn - lastMovement > 100){
         updateCounter(SC_IN);
     }
     lastMovement = millisIn;
@@ -165,7 +174,7 @@ void inSensor(void) {
 
 void outSensor(void) {
     long millisOut = millis();
-    if(millisOut - lastMovement > 200){
+    if(millisOut - lastMovement > 100){
         updateCounter(SC_OUT);
     }
     lastMovement = millisOut;
@@ -175,25 +184,31 @@ void alertSensorInit(int pin){
     if(pin==SFum){
         message = "Sensor de fumaca acionado, iniciando alarme de incendio";
         alarmSystem = true;
+        printf("Sensor de fumaca acionado, iniciando alarme de incendio\n");
         changeState(AL_BZ);
         //sendMessage(message);
     }else if(pin==SJan){
          message = "Sensor de janela acionado";
+         printf("Sensor de janela acionado\n");
          //sendMessage(message);
     }else if(pin==SPor){
          message = "Sensor de porta acionado";
+         printf("Sensor de porta acionado\n");
          //sendMessage(message);
     }else if(pin==SPres){
          message = "Sensor de presenca acionado";
+         printf("Sensor de presenca acionado\n");
          if(alarmSystem == true && digitalRead(AL_BZ)==0){
             message = "Sensor de presenca acionado, alarme acionado";
+            printf("Alarme acionado\n");
             changeState(AL_BZ);
-         } else if(alarmSystem = false){
+         } else if(alarmSystem == false){
             digitalWrite(L_01, 1);
             digitalWrite(L_02, 1);
             millisHallway = millis();
             hallwayLights = true;
             message = "Sensor de presenca acionado, lampadas da sala acionadas";
+            printf("Lampadas da sala acionadas\n");
          }
          //sendMessage(message);
     }
@@ -201,15 +216,17 @@ void alertSensorInit(int pin){
 
 void sendReport(void){
     char *reportNumber;
-    char *reportMessage = "O numero de pessoas na sala e de: ";
+    char reportMessage[100];
+    strcpy(reportMessage, "O numero de pessoas na sala e de: ");
+    printf("O numero de pessoas na sala e de: %d\n", roomCounter.peopleTotal);
     asprintf(&reportNumber, "%d", roomCounter.peopleTotal);
     strcat(reportMessage, reportNumber);
 
     reportSize = strlen(reportMessage);
 
-    if (send(sockfd, reportMessage, reportSize, 0) != reportSize)    {
-        printf("Erro no envio.\n");
-    }
+    //if (send(sockfd, reportMessage, reportSize, 0) != reportSize)    {
+    //    printf("Erro no envio.\n");
+    //}
 }
 
 void checkFile(char *fileName){
